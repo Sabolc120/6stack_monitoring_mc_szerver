@@ -1,0 +1,99 @@
+version: '2.4'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus' 
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prom_data:/prometheus 
+    depends_on:
+      - node_exporter
+      - minecraft_jmx_exporter 
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana_storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+      
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100" 
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host)($$|/)'
+
+  minecraft_server:
+    image: itzg/minecraft-server 
+    container_name: minecraft-server
+    ports:
+      - "25565:25565"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+        reservations:
+          cpus: '1.0'
+    environment:
+      EULA: "TRUE"
+      TYPE: "SPIGOT" 
+      VERSION: "1.20.4"
+      DIFFICULTY: "hard" 
+      MOTD: "Welcome to my monitored server!" 
+      MAX_HEAP_SIZE: "2G" 
+      INITIAL_HEAP_SIZE: "1G" 
+      MINECRAFT_PORT: 25565
+      ENABLE_JMX: "true" 
+      JMX_PORT: 9999 
+    volumes:
+      - ./mc_data:/data 
+    depends_on:
+      - minecraft_jmx_exporter 
+
+  minecraft_jmx_exporter:
+    image: bitnami/jmx-exporter:latest
+    container_name: minecraft_jmx_exporter
+    volumes:
+      - ./config/jmx_config.yml:/opt/bitnami/jmx-exporter/conf/config.yml 
+    ports:
+      - "9998:9404" 
+    environment:
+      JMX_CONFIG_FILE: /opt/bitnami/jmx-exporter/conf/config.yml
+    restart: unless-stopped
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080" 
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    privileged: true
+    restart: unless-stopped
+    
+volumes: 
+  prom_data:
+  grafana_storage:
+  mc_data:

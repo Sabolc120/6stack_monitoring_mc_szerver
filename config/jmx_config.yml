@@ -1,0 +1,35 @@
+
+- pattern: 'java.lang<type=Memory><HeapMemoryUsage|NonHeapMemoryUsage>(\w*)'
+  name: jvm_memory_$1
+  labels:
+    area: '$1'
+  help: 'JVM Memory usage'
+  value: 'usage'
+
+- pattern: 'java.lang<type=GarbageCollector,name=(\w*)><CollectionTime|CollectionCount>(\w*)'
+  name: jvm_gc_$1_$2
+  labels:
+    name: '$1'
+  help: 'JVM Garbage Collector metrics'
+  value: 'value'
+
+- pattern: 'java.lang<type=Threading><TotalStartedThreadCount|ThreadCount|DaemonThreadCount>(\w*)'
+  name: jvm_threads_$1
+  help: 'JVM Thread metrics'
+  value: '$1'
+
+
+- pattern: 'net.minecraft.server<type=MinecraftServer><TPS>(\w*)'
+  name: minecraft_server_tps
+  help: 'Minecraft Ticks Per Second'
+  value: 'value'
+
+- pattern: 'net.minecraft.server<type=MinecraftServer><ServerUptime>(\w*)'
+  name: minecraft_server_uptime_seconds
+  help: 'Minecraft Server Uptime in seconds'
+  value: 'value'
+
+- pattern: 'net.minecraft.server<type=MinecraftServer><Players>(\w*)'
+  name: minecraft_players_online
+  help: 'Number of players currently online'
+  value: 'value'
